@@ -4,6 +4,28 @@ ForgeUI Dungeon Escape is an original first-person embedded adventure game built
 
 The player explores a small dungeon, finds the key, unlocks the exit, and escapes.
 
+## ForgeUI Ecosystem
+
+ForgeUI Dungeon Escape is part of the wider [ForgeUI](https://forgeui.co.nz/) ecosystem: a set of tools, examples, and hardware projects for designing interactive embedded experiences.
+
+- [ForgeUI Studio](https://github.com/RTechAI/esp32p4-ui-studio) provides the visual UI-development environment.
+- [ForgeUI Hosted Studio](https://studio.forgeui.co.nz/) makes ForgeUI Studio available in the browser.
+- [ForgeUI Hardware Lab](https://github.com/RTechAI) collects the tested embedded hardware projects and platform examples.
+- ForgeUI Micro Games are small embedded game-development examples built on those foundations.
+
+ForgeUI Micro Games demonstrate ESP32 hardware, LVGL embedded graphics, input systems, and interactive experiences. They provide practical ForgeUI Studio examples alongside focused, runnable firmware projects.
+
+## Project Context
+
+ForgeUI Dungeon Escape is an original RTechAI ForgeUI Micro Games project for ESP32-S3 game development. It is built using:
+
+- ESP32-S3 hardware platform
+- GC9A01 240×240 round display
+- LVGL 9.2.2
+- ESP-IDF 5.5.4
+
+The project is a compact example of LVGL embedded graphics and embedded game development for GC9A01 round display projects in the ForgeUI Hardware Lab.
+
 ## Physical Validation
 
 ### Boot screen
