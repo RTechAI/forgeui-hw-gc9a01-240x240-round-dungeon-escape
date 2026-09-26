@@ -1,5 +1,5 @@
 #include "display.h"
-#include "game/microsnake.h"
+
 
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -52,7 +52,7 @@ static void lvgl_task(void *arg)
     }
 }
 
-void displayConfig(void)
+void displayConfig(void (*start_ui)(void))
 {
     static lv_disp_draw_buf_t draw_buffer;
     lv_color_t *buffer_a = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
@@ -80,6 +80,6 @@ void displayConfig(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
     ESP_LOGI(TAG, "LVGL tick timer started at %d ms", EXAMPLE_LVGL_TICK_PERIOD_MS);
 
-    microsnake_start();
+    if (start_ui) start_ui();
     assert(xTaskCreate(lvgl_task, "lvgl", 4096, NULL, 4, NULL) == pdPASS);
 }

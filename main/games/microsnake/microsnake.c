@@ -6,11 +6,11 @@
 #include "input/micro_input.h"
 #include "lvgl.h"
 
-#define SNAKE_GRID_COLUMNS 12
-#define SNAKE_GRID_ROWS 12
-#define SNAKE_CELL_SIZE 13
-#define SNAKE_GRID_X 42
-#define SNAKE_GRID_Y 50
+#define SNAKE_GRID_COLUMNS 18
+#define SNAKE_GRID_ROWS 18
+#define SNAKE_CELL_SIZE 12
+#define SNAKE_GRID_X 12
+#define SNAKE_GRID_Y 12
 #define SNAKE_MAX_SEGMENTS 72
 #define SNAKE_MOVE_INTERVAL_MS 220
 #define SNAKE_AXIS_LOW 1200
@@ -82,11 +82,25 @@ static void update_direction(const micro_input_state_t *input)
     }
 }
 
+/* Circular arena with small top/bottom HUD caps. Cell corners remain inside
+ * the bezel; there is no inset rectangular board. */
+static bool playable(snake_cell_t cell)
+{
+    const int x = SNAKE_GRID_X + cell.x * SNAKE_CELL_SIZE + SNAKE_CELL_SIZE / 2;
+    const int y = SNAKE_GRID_Y + cell.y * SNAKE_CELL_SIZE + SNAKE_CELL_SIZE / 2;
+    const int dx = x - 120, dy = y - 120;
+    return dx * dx + dy * dy <= 104 * 104 && y >= 36 && y <= 204;
+}
+
 static void place_food(void)
 {
-    for (;;) {
-        food.x = next_random() % SNAKE_GRID_COLUMNS;
-        food.y = next_random() % SNAKE_GRID_ROWS;
+    const unsigned cells = SNAKE_GRID_COLUMNS * SNAKE_GRID_ROWS;
+    const unsigned first = next_random() % cells;
+    for (unsigned offset = 0; offset < cells; ++offset) {
+        const unsigned index = (first + offset) % cells;
+        food.x = index % SNAKE_GRID_COLUMNS;
+        food.y = index / SNAKE_GRID_COLUMNS;
+        if (!playable(food)) continue;
         bool occupied = false;
         for (uint8_t i = 0; i < snake_length; ++i) occupied |= cells_match(food, snake[i]);
         if (!occupied) return;
@@ -98,7 +112,7 @@ static void draw_cell(snake_cell_t cell, lv_color_t color, uint8_t radius)
     lv_obj_t *block = lv_obj_create(board);
     lv_obj_clear_flag(block, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(block, SNAKE_CELL_SIZE - 2, SNAKE_CELL_SIZE - 2);
-    lv_obj_set_pos(block, cell.x * SNAKE_CELL_SIZE + 1, cell.y * SNAKE_CELL_SIZE + 1);
+    lv_obj_set_pos(block, SNAKE_GRID_X + cell.x * SNAKE_CELL_SIZE + 1, SNAKE_GRID_Y + cell.y * SNAKE_CELL_SIZE + 1);
     lv_obj_set_style_radius(block, radius, 0);
     lv_obj_set_style_border_width(block, 0, 0);
     lv_obj_set_style_bg_color(block, color, 0);
@@ -118,16 +132,16 @@ static void render_game(void)
 static void new_game(void)
 {
     snake_length = 4;
-    snake[0] = (snake_cell_t){6, 6};
-    snake[1] = (snake_cell_t){5, 6};
-    snake[2] = (snake_cell_t){4, 6};
-    snake[3] = (snake_cell_t){3, 6};
+    snake[0] = (snake_cell_t){9, 9};
+    snake[1] = (snake_cell_t){8, 9};
+    snake[2] = (snake_cell_t){7, 9};
+    snake[3] = (snake_cell_t){6, 9};
     direction = DIRECTION_RIGHT;
     next_direction = DIRECTION_RIGHT;
     score = 0;
     game_over = false;
     place_food();
-    lv_label_set_text(status_label, "MOVE TO PLAY");
+    lv_label_set_text(status_label, "HOLD: MENU");
     lv_obj_set_style_text_color(status_label, lv_color_hex(0x75A7C7), 0);
     last_move = lv_tick_get();
     render_game();
@@ -142,12 +156,20 @@ static void step_game(void)
     if (direction == DIRECTION_DOWN) head.y = (head.y + 1) % SNAKE_GRID_ROWS;
     if (direction == DIRECTION_LEFT) head.x = (head.x + SNAKE_GRID_COLUMNS - 1) % SNAKE_GRID_COLUMNS;
 
+    /* Wrap to the opposite end of this circular row/column. */
+    while (!playable(head)) {
+        if (direction == DIRECTION_UP) head.y = (head.y + SNAKE_GRID_ROWS - 1) % SNAKE_GRID_ROWS;
+        if (direction == DIRECTION_RIGHT) head.x = (head.x + 1) % SNAKE_GRID_COLUMNS;
+        if (direction == DIRECTION_DOWN) head.y = (head.y + 1) % SNAKE_GRID_ROWS;
+        if (direction == DIRECTION_LEFT) head.x = (head.x + SNAKE_GRID_COLUMNS - 1) % SNAKE_GRID_COLUMNS;
+    }
+
     const bool ate_food = cells_match(head, food);
     const uint8_t collision_segments = snake_length - (ate_food ? 0 : 1);
     for (uint8_t i = 0; i < collision_segments; ++i) {
         if (cells_match(head, snake[i])) {
             game_over = true;
-            lv_label_set_text(status_label, "GAME OVER - PRESS SW");
+            lv_label_set_text(status_label, "PRESS TO RETRY");
             lv_obj_set_style_text_color(status_label, lv_color_hex(0xFF5573), 0);
             return;
         }
@@ -159,18 +181,15 @@ static void step_game(void)
     if (ate_food) {
         score += 10;
         place_food();
-        lv_label_set_text(status_label, "NICE MOVE");
+        lv_label_set_text(status_label, "HOLD: MENU");
     }
     render_game();
 }
 
-static void game_tick(lv_timer_t *timer)
+void microsnake_tick(const micro_input_state_t *input)
 {
-    (void)timer;
-    micro_input_state_t input;
-    const esp_err_t input_result = micro_input_read(&input);
-    if (input_result == ESP_OK && input.axes_valid) update_direction(&input);
-    const bool pressed = input.button_pressed;
+    if (input->axes_valid) update_direction(input);
+    const bool pressed = input->button_pressed;
     if (game_over && pressed && !previous_button) new_game();
     previous_button = pressed;
     if (!game_over && lv_tick_elaps(last_move) >= SNAKE_MOVE_INTERVAL_MS) {
@@ -178,10 +197,9 @@ static void game_tick(lv_timer_t *timer)
         step_game();
     }
 }
-
-static void create_game_screen(lv_timer_t *timer)
+void microsnake_start(void)
 {
-    lv_timer_del(timer);
+    previous_button = true;
     lv_obj_clean(lv_scr_act());
     lv_obj_t *screen = lv_scr_act();
     lv_obj_set_style_bg_color(screen, lv_color_hex(0x07111F), 0);
@@ -194,43 +212,33 @@ static void create_game_screen(lv_timer_t *timer)
     lv_obj_set_style_text_color(score_label, lv_color_hex(0xF4FAFF), 0);
     lv_obj_align(score_label, LV_ALIGN_TOP_MID, 0, 18);
 
-    board = lv_obj_create(screen);
-    lv_obj_set_size(board, SNAKE_GRID_COLUMNS * SNAKE_CELL_SIZE, SNAKE_GRID_ROWS * SNAKE_CELL_SIZE);
-    lv_obj_set_pos(board, SNAKE_GRID_X, SNAKE_GRID_Y);
-    lv_obj_clear_flag(board, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_radius(board, 10, 0);
-    lv_obj_set_style_bg_color(board, lv_color_hex(0x10233A), 0);
-    lv_obj_set_style_bg_opa(board, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_width(board, 2, 0);
-    lv_obj_set_style_border_color(board, lv_color_hex(0x1E4666), 0);
-    lv_obj_set_style_pad_all(board, 0, 0);
+    lv_obj_t *rim = lv_obj_create(screen);
+    lv_obj_set_size(rim, 234, 234);
+    lv_obj_center(rim);
+    lv_obj_clear_flag(rim, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(rim, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(rim, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(rim, 1, 0);
+    lv_obj_set_style_border_color(rim, lv_color_hex(0x1E4666), 0);
 
+    board = lv_obj_create(screen);
+    lv_obj_remove_style_all(board);
+    lv_obj_set_size(board, 240, 240);
+    lv_obj_set_pos(board, 0, 0);
+    lv_obj_clear_flag(board, LV_OBJ_FLAG_SCROLLABLE);
     status_label = lv_label_create(screen);
-    lv_obj_set_width(status_label, 220);
+    lv_obj_set_width(status_label, 140);
     lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_font(status_label, &lv_font_montserrat_14, 0);
-    lv_obj_align(status_label, LV_ALIGN_BOTTOM_MID, 0, -13);
+    lv_obj_align(status_label, LV_ALIGN_BOTTOM_MID, 0, -18);
     new_game();
-    lv_timer_create(game_tick, 20, NULL);
+
 }
 
-void microsnake_start(void)
+void microsnake_stop(void)
 {
-    lv_obj_t *screen = lv_scr_act();
-    lv_obj_set_style_bg_color(screen, lv_color_hex(0x07111F), 0);
-    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
-    lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *forgeui = lv_label_create(screen);
-    lv_label_set_text(forgeui, "FORGEUI");
-    lv_obj_set_style_text_font(forgeui, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(forgeui, lv_color_hex(0xF4FAFF), 0);
-    lv_obj_align(forgeui, LV_ALIGN_CENTER, 0, -16);
-
-    lv_obj_t *title = lv_label_create(screen);
-    lv_label_set_text(title, "MICROSNAKE");
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(title, lv_color_hex(0x21D4C2), 0);
-    lv_obj_align(title, LV_ALIGN_CENTER, 0, 14);
-    lv_timer_create(create_game_screen, 1200, NULL);
+    /* No private timers or allocations: the host deletes the LVGL children. */
+    board = NULL;
+    score_label = NULL;
+    status_label = NULL;
 }
