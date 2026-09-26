@@ -2,11 +2,11 @@
 #include "game_selector.h"
 #include "boot.h"
 #include "games/microsnake/microsnake.h"
-#include "games/microasteroids/microasteroids.h"
+#include "engine/microdoom.h"
 #include "lvgl.h"
 
 static const arcade_game_t games[] = {
-    {"MicroAsteroids", microasteroids_start, microasteroids_tick, microasteroids_stop},
+    {"MicroDOOM", microdoom_start, microdoom_tick, microdoom_stop},
     {"MicroSnake", microsnake_start, microsnake_tick, microsnake_stop},
     {"Coming Soon", NULL, NULL, NULL},
 };

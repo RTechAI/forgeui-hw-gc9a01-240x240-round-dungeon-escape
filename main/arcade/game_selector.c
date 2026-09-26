@@ -55,7 +55,7 @@ void game_selector_show(const arcade_game_t *games, size_t count, size_t selecte
     lv_obj_clear_flag(rim, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
     label(screen, "FORGEUI", 24, 0x21D4C2);
     label(screen, "MICRO GAMES", 43, 0xE1F7F8);
-    label(screen, "FEATURED / ASTEROIDS", 65, 0x75929E);
+    label(screen, "MICRODOOM / 3D TEST", 65, 0x75929E);
     list = lv_obj_create(screen);
     lv_obj_remove_style_all(list);
     lv_obj_set_size(list, 196, 103);
