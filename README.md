@@ -2,7 +2,7 @@
 
 ForgeUI MicroSnake is an official ForgeUI Hardware Lab Micro Project developed by RTechAI. It is a joystick-controlled embedded game built on the physically tested ESP32-S3 + GC9A01 240×240 round display baseline.
 
-**Project status:** This initial release establishes the MicroSnake project identity and documentation. Joystick control and gameplay are planned; the current firmware retains the proven ForgeUI ALIVE display showcase.
+**Project status:** INPUT ALIVE TEST — PHYSICAL PASS. The current firmware displays live joystick X/Y readings and a debounced button state using LVGL. Snake gameplay is not implemented.
 
 ## ForgeUI Ecosystem
 
@@ -33,7 +33,7 @@ The Micro Project concept:
 > Open the code.<br>
 > Hack it.
 
-For now, flashing runs the inherited ALIVE showcase; playable MicroSnake will follow in a later development stage.
+For now, flashing runs the input test screen; playable MicroSnake will follow in a later development stage.
 
 ## Hardware Foundation
 
@@ -60,7 +60,33 @@ The baseline validated firmware build and flash, GC9A01 initialization and SPI r
 | RST | GPIO14 |
 | MISO | Unused |
 
-GPIO10–GPIO14 are the physically proven flat-ribbon display connection. Do not change them. Joystick wiring is not defined at this stage.
+GPIO10–GPIO14 are the physically proven flat-ribbon display connection. Do not change them.
+
+## Input Alive Test
+
+Connect a typical analog joystick module with power disconnected:
+
+| Joystick | ESP32-S3 | Purpose |
+| --- | --- | --- |
+| VCC | 3.3V | Use 3.3 V, not 5 V, to keep outputs within GPIO voltage limits. |
+| GND | GND | Common ground |
+| VRX | GPIO4 | ADC1 channel 3 |
+| VRY | GPIO5 | ADC1 channel 4 |
+| SW | GPIO6 | Active-low button with internal pull-up |
+
+GPIO4/5/6 are exposed on the [Espressif DevKitC-1 header](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.1.html). They avoid the locked display pins GPIO10–14, flash/PSRAM pins GPIO26–37, USB pins GPIO19/20, and strapping pins GPIO0/3/45/46 listed in the [ESP32-S3 hardware guidance](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/schematic-checklist.html).
+
+`main/input/micro_input.h` exposes `micro_input_init()` and `micro_input_read()` for future Micro Projects. It has no LVGL or game dependency. A single caller polls about every 10 ms, receiving raw 12-bit X/Y counts, axis validity, and a button state debounced for 30 ms. ADC read errors invalidate the axes while button sampling continues.
+
+The test screen polls in the existing LVGL task and refreshes labels every 50 ms. ADC1 uses 12 dB attenuation; readings are uncalibrated counts from 0–4095, not voltage. The centre need not be exactly 2048, and values may saturate near an endpoint. Unconnected analog inputs float and do not prove joystick operation.
+
+Physical acceptance passed:
+
+- Move each axis and confirm its displayed value changes.
+- Press and release SW and confirm PRESSED/RELEASED follows.
+- Confirm the round display remains stable with no GC9A01 regression.
+
+The joystick test passed through physical input and display validation; this does not claim Snake gameplay validation.
 
 ## Software Stack
 
@@ -72,7 +98,7 @@ GPIO10–GPIO14 are the physically proven flat-ribbon display connection. Do not
 - 8 MiB auto-detected octal PSRAM at 80 MHz DDR
 - `CONFIG_SPIRAM_USE_MEMMAP=y`: PSRAM is initialized and mapped, without malloc-heap integration
 
-The firmware currently includes the lightweight LVGL-only ForgeUI ALIVE showcase: an animated circular readiness ring and the display/platform identity. The display driver, LVGL runtime, ESP-IDF configuration, PSRAM configuration, build files, and dependencies are retained from the hardware foundation.
+The firmware now uses an LVGL-only MicroSnake input test screen without external assets. The GC9A01 driver, LVGL runtime/configuration, ESP-IDF configuration, flash configuration, and PSRAM configuration are retained from the hardware foundation. The main component source list adds the input layer and test screen; ADC support uses the ESP-IDF component already included by the main component.
 
 ## Build and Flash
 
@@ -84,7 +110,7 @@ idf.py -p COMx flash
 idf.py -p COMx monitor
 ```
 
-Replace `COMx` with the detected port. Use `Ctrl-]` to exit the monitor. These commands run the current ALIVE showcase firmware.
+Replace `COMx` with the detected port. Use `Ctrl-]` to exit the monitor. These commands run the input test firmware.
 
 ## Hardware Foundation Evidence
 

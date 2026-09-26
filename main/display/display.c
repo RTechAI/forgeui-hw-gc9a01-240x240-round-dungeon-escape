@@ -1,4 +1,5 @@
 #include "display.h"
+#include "input/input_test_screen.h"
 
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -51,70 +52,6 @@ static void lvgl_task(void *arg)
     }
 }
 
-static void set_ring_value(void *ring, int32_t value)
-{
-    lv_arc_set_value(ring, value);
-}
-
-static void create_alive_showcase(void)
-{
-    lv_obj_t *screen = lv_scr_act();
-    lv_obj_set_style_bg_color(screen, lv_color_hex(0x07111F), 0);
-    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
-
-    lv_obj_t *ring = lv_arc_create(screen);
-    lv_obj_set_size(ring, 156, 156);
-    lv_obj_center(ring);
-    lv_arc_set_rotation(ring, 270);
-    lv_arc_set_bg_angles(ring, 0, 360);
-    lv_arc_set_range(ring, 0, 100);
-    lv_arc_set_value(ring, 76);
-    lv_obj_remove_style(ring, NULL, LV_PART_KNOB);
-    lv_obj_clear_flag(ring, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_style_arc_width(ring, 7, LV_PART_MAIN);
-    lv_obj_set_style_arc_color(ring, lv_color_hex(0x18324D), LV_PART_MAIN);
-    lv_obj_set_style_arc_width(ring, 7, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_color(ring, lv_color_hex(0x21D4C2), LV_PART_INDICATOR);
-
-    lv_obj_t *brand = lv_label_create(screen);
-    lv_label_set_text(brand, "FORGEUI");
-    lv_obj_set_style_text_color(brand, lv_color_hex(0xF4FAFF), 0);
-    lv_obj_set_style_text_font(brand, &lv_font_montserrat_14, 0);
-    lv_obj_align(brand, LV_ALIGN_TOP_MID, 0, 25);
-
-    lv_obj_t *lab = lv_label_create(screen);
-    lv_label_set_text(lab, "HARDWARE LAB");
-    lv_obj_set_style_text_color(lab, lv_color_hex(0x75A7C7), 0);
-    lv_obj_set_style_text_font(lab, &lv_font_montserrat_14, 0);
-    lv_obj_align(lab, LV_ALIGN_TOP_MID, 0, 51);
-
-    lv_obj_t *ready = lv_label_create(screen);
-    lv_label_set_text(ready, "DISPLAY READY");
-    lv_obj_set_style_text_color(ready, lv_color_hex(0x21D4C2), 0);
-    lv_obj_set_style_text_font(ready, &lv_font_montserrat_14, 0);
-    lv_obj_center(ready);
-
-    lv_obj_t *spec = lv_label_create(screen);
-    lv_label_set_text(spec, "GC9A01  |  240 x 240\nESP32-S3");
-    lv_obj_set_style_text_color(spec, lv_color_hex(0xA9C2D4), 0);
-    lv_obj_set_style_text_align(spec, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_font(spec, &lv_font_montserrat_14, 0);
-    lv_obj_align(spec, LV_ALIGN_BOTTOM_MID, 0, -28);
-
-    lv_anim_t animation;
-    lv_anim_init(&animation);
-    lv_anim_set_var(&animation, ring);
-    lv_anim_set_values(&animation, 12, 96);
-    lv_anim_set_time(&animation, 1800);
-    lv_anim_set_playback_time(&animation, 1800);
-    lv_anim_set_repeat_count(&animation, LV_ANIM_REPEAT_INFINITE);
-    lv_anim_set_exec_cb(&animation, set_ring_value);
-    lv_anim_start(&animation);
-
-    lv_obj_invalidate(screen);
-    ESP_LOGI(TAG, "ForgeUI GC9A01 alive showcase created");
-}
-
 void displayConfig(void)
 {
     static lv_disp_draw_buf_t draw_buffer;
@@ -143,6 +80,6 @@ void displayConfig(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
     ESP_LOGI(TAG, "LVGL tick timer started at %d ms", EXAMPLE_LVGL_TICK_PERIOD_MS);
 
-    create_alive_showcase();
+    input_test_screen_create();
     assert(xTaskCreate(lvgl_task, "lvgl", 4096, NULL, 4, NULL) == pdPASS);
 }

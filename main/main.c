@@ -1,14 +1,16 @@
 /*
- * ForgeUI Hardware Lab display-only bring-up entry point.
+ * ForgeUI MicroSnake input alive test, developed by RTechAI.
  * Upstream project attribution is retained in the original source files.
  */
 #include "display/gc9a01.h"
 #include "display/display.h"
 #include "esp_log.h"
+#include "input/micro_input.h"
 
 void app_main(void)
 {
-    ESP_LOGI("forgeui", "ForgeUI GC9A01 baseline; Flash: 16 MiB; PSRAM: 8 MiB");
+    ESP_LOGI("forgeui", "ForgeUI MicroSnake input test; Flash: 16 MiB; PSRAM: 8 MiB");
+    ESP_ERROR_CHECK(micro_input_init());
     gc9a01_displayInit();
     displayConfig();
 }
