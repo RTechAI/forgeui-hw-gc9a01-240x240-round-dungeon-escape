@@ -28,35 +28,27 @@ The project is a compact example of LVGL embedded graphics and embedded game dev
 
 ## Physical Validation
 
-### Boot screen
+The game has been physically validated on an ESP32-S3 with a GC9A01 240×240 round display.
 
 ![ForgeUI Dungeon Escape boot screen](docs/images/forgeui-dungeon-escape-boot.png)
 
-ForgeUI Dungeon Escape boot screen running on an ESP32-S3 with a GC9A01 round display.
-
-### Level 1 gameplay
+*ForgeUI Dungeon Escape boot screen.*
 
 ![ForgeUI Dungeon Escape Level 1 gameplay](docs/images/forgeui-dungeon-escape-level1.png)
 
-Level 1 dungeon exploration on the GC9A01 240×240 round TFT.
+*Level 1 exploration.*
 
-### Key found state
+![ForgeUI Dungeon Escape key collected](docs/images/forgeui-dungeon-escape-level1key.png)
 
-![ForgeUI Dungeon Escape key found state](docs/images/forgeui-dungeon-escape-key-found.png)
+*Key collected.*
 
-The key objective displayed during the Level 1 exploration sequence.
+![ForgeUI Dungeon Escape exit reached](docs/images/forgeui-dungeon-escape-level1door.png)
 
-### Door and exit state
-
-![ForgeUI Dungeon Escape door and exit state](docs/images/forgeui-dungeon-escape-door.png)
-
-The locked exit door encountered during the dungeon escape objective.
-
-### Hardware setup
+*Exit reached.*
 
 ![ForgeUI Dungeon Escape hardware validation](docs/images/forgeui-dungeon-escape-hardware.png)
 
-ForgeUI Dungeon Escape running on ESP32-S3 with GC9A01 round display hardware.
+*Physical hardware setup.*
 
 ## Technical details
 
