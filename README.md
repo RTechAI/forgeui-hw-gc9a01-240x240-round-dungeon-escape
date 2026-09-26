@@ -124,17 +124,17 @@ The ESP-IDF 5.5.4 firmware build and flash to the ESP32-S3 on COM10 passed, with
 
 ForgeUI Micro Arcade boot on the GC9A01 round display:
 
-![ForgeUI Micro Arcade boot with circular cyan rings](docs/images/forgeui-micro-games-microasteroids.png)
+![ForgeUI Micro Arcade boot with circular cyan rings](docs/images/forgeui-microasteroids.png)
 
-[Additional boot photograph](docs/images/forgeui-micro-games-microasteroids3.png)
+[Additional hardware photograph showing the boot screen](docs/images/forgeui-microasteroids-hardware.png)
 
 Game selector with MicroAsteroids featured and MicroSnake available:
 
-![ForgeUI Micro Games selector with MicroAsteroids selected](docs/images/forgeui-micro-games-microasteroids%202.png)
+![ForgeUI Micro Games selector with MicroAsteroids selected](docs/images/forgeui-microasteroids-selector.png)
 
 MicroAsteroids running on the circular display:
 
-![MicroAsteroids ship and asteroids on the GC9A01](docs/images/forgeui-micro-games-microasteroids4.png)
+![MicroAsteroids ship and asteroids on the GC9A01](docs/images/forgeui-microasteroids-gameplay.png)
 
 ## Attribution
 
