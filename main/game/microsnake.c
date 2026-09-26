@@ -1,0 +1,236 @@
+#include "microsnake.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "input/micro_input.h"
+#include "lvgl.h"
+
+#define SNAKE_GRID_COLUMNS 12
+#define SNAKE_GRID_ROWS 12
+#define SNAKE_CELL_SIZE 13
+#define SNAKE_GRID_X 42
+#define SNAKE_GRID_Y 50
+#define SNAKE_MAX_SEGMENTS 72
+#define SNAKE_MOVE_INTERVAL_MS 220
+#define SNAKE_AXIS_LOW 1200
+#define SNAKE_AXIS_HIGH 2900
+
+typedef enum {
+    DIRECTION_UP,
+    DIRECTION_RIGHT,
+    DIRECTION_DOWN,
+    DIRECTION_LEFT,
+} snake_direction_t;
+
+typedef struct {
+    uint8_t x;
+    uint8_t y;
+} snake_cell_t;
+
+static snake_cell_t snake[SNAKE_MAX_SEGMENTS];
+static uint8_t snake_length;
+static snake_cell_t food;
+static snake_direction_t direction;
+static snake_direction_t next_direction;
+static uint16_t score;
+static uint32_t random_state = 0x4D534E4BU;
+static uint32_t last_move;
+static bool game_over;
+static bool previous_button;
+static lv_obj_t *board;
+static lv_obj_t *score_label;
+static lv_obj_t *status_label;
+
+static uint32_t next_random(void)
+{
+    random_state = random_state * 1664525U + 1013904223U;
+    return random_state;
+}
+
+static bool cells_match(snake_cell_t a, snake_cell_t b)
+{
+    return a.x == b.x && a.y == b.y;
+}
+
+static bool direction_is_opposite(snake_direction_t a, snake_direction_t b)
+{
+    return (a == DIRECTION_UP && b == DIRECTION_DOWN) ||
+           (a == DIRECTION_DOWN && b == DIRECTION_UP) ||
+           (a == DIRECTION_LEFT && b == DIRECTION_RIGHT) ||
+           (a == DIRECTION_RIGHT && b == DIRECTION_LEFT);
+}
+
+static void set_direction(snake_direction_t requested)
+{
+    if (!direction_is_opposite(direction, requested)) next_direction = requested;
+}
+
+static void update_direction(const micro_input_state_t *input)
+{
+    if (!input->axes_valid) return;
+    const int x_distance = input->x_raw - 2048;
+    const int y_distance = input->y_raw - 2048;
+    if (x_distance > 0 && input->x_raw >= SNAKE_AXIS_HIGH && x_distance >= y_distance && x_distance >= -y_distance) {
+        set_direction(DIRECTION_RIGHT);
+    } else if (x_distance < 0 && input->x_raw <= SNAKE_AXIS_LOW && -x_distance >= y_distance && -x_distance >= -y_distance) {
+        set_direction(DIRECTION_LEFT);
+    } else if (y_distance > 0 && input->y_raw >= SNAKE_AXIS_HIGH) {
+        set_direction(DIRECTION_DOWN);
+    } else if (y_distance < 0 && input->y_raw <= SNAKE_AXIS_LOW) {
+        set_direction(DIRECTION_UP);
+    }
+}
+
+static void place_food(void)
+{
+    for (;;) {
+        food.x = next_random() % SNAKE_GRID_COLUMNS;
+        food.y = next_random() % SNAKE_GRID_ROWS;
+        bool occupied = false;
+        for (uint8_t i = 0; i < snake_length; ++i) occupied |= cells_match(food, snake[i]);
+        if (!occupied) return;
+    }
+}
+
+static void draw_cell(snake_cell_t cell, lv_color_t color, uint8_t radius)
+{
+    lv_obj_t *block = lv_obj_create(board);
+    lv_obj_clear_flag(block, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_size(block, SNAKE_CELL_SIZE - 2, SNAKE_CELL_SIZE - 2);
+    lv_obj_set_pos(block, cell.x * SNAKE_CELL_SIZE + 1, cell.y * SNAKE_CELL_SIZE + 1);
+    lv_obj_set_style_radius(block, radius, 0);
+    lv_obj_set_style_border_width(block, 0, 0);
+    lv_obj_set_style_bg_color(block, color, 0);
+    lv_obj_set_style_bg_opa(block, LV_OPA_COVER, 0);
+}
+
+static void render_game(void)
+{
+    lv_obj_clean(board);
+    draw_cell(food, lv_color_hex(0xFF5573), 7);
+    for (uint8_t i = 0; i < snake_length; ++i) {
+        draw_cell(snake[i], i == 0 ? lv_color_hex(0xD7FF5F) : lv_color_hex(0x44D88B), i == 0 ? 4 : 3);
+    }
+    lv_label_set_text_fmt(score_label, "SCORE %u", score);
+}
+
+static void new_game(void)
+{
+    snake_length = 4;
+    snake[0] = (snake_cell_t){6, 6};
+    snake[1] = (snake_cell_t){5, 6};
+    snake[2] = (snake_cell_t){4, 6};
+    snake[3] = (snake_cell_t){3, 6};
+    direction = DIRECTION_RIGHT;
+    next_direction = DIRECTION_RIGHT;
+    score = 0;
+    game_over = false;
+    place_food();
+    lv_label_set_text(status_label, "MOVE TO PLAY");
+    lv_obj_set_style_text_color(status_label, lv_color_hex(0x75A7C7), 0);
+    last_move = lv_tick_get();
+    render_game();
+}
+
+static void step_game(void)
+{
+    direction = next_direction;
+    snake_cell_t head = snake[0];
+    if (direction == DIRECTION_UP) head.y = (head.y + SNAKE_GRID_ROWS - 1) % SNAKE_GRID_ROWS;
+    if (direction == DIRECTION_RIGHT) head.x = (head.x + 1) % SNAKE_GRID_COLUMNS;
+    if (direction == DIRECTION_DOWN) head.y = (head.y + 1) % SNAKE_GRID_ROWS;
+    if (direction == DIRECTION_LEFT) head.x = (head.x + SNAKE_GRID_COLUMNS - 1) % SNAKE_GRID_COLUMNS;
+
+    const bool ate_food = cells_match(head, food);
+    const uint8_t collision_segments = snake_length - (ate_food ? 0 : 1);
+    for (uint8_t i = 0; i < collision_segments; ++i) {
+        if (cells_match(head, snake[i])) {
+            game_over = true;
+            lv_label_set_text(status_label, "GAME OVER - PRESS SW");
+            lv_obj_set_style_text_color(status_label, lv_color_hex(0xFF5573), 0);
+            return;
+        }
+    }
+
+    if (ate_food && snake_length < SNAKE_MAX_SEGMENTS) ++snake_length;
+    for (int i = snake_length - 1; i > 0; --i) snake[i] = snake[i - 1];
+    snake[0] = head;
+    if (ate_food) {
+        score += 10;
+        place_food();
+        lv_label_set_text(status_label, "NICE MOVE");
+    }
+    render_game();
+}
+
+static void game_tick(lv_timer_t *timer)
+{
+    (void)timer;
+    micro_input_state_t input;
+    const esp_err_t input_result = micro_input_read(&input);
+    if (input_result == ESP_OK && input.axes_valid) update_direction(&input);
+    const bool pressed = input.button_pressed;
+    if (game_over && pressed && !previous_button) new_game();
+    previous_button = pressed;
+    if (!game_over && lv_tick_elaps(last_move) >= SNAKE_MOVE_INTERVAL_MS) {
+        last_move = lv_tick_get();
+        step_game();
+    }
+}
+
+static void create_game_screen(lv_timer_t *timer)
+{
+    lv_timer_del(timer);
+    lv_obj_clean(lv_scr_act());
+    lv_obj_t *screen = lv_scr_act();
+    lv_obj_set_style_bg_color(screen, lv_color_hex(0x07111F), 0);
+    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
+    lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
+
+    score_label = lv_label_create(screen);
+    lv_label_set_text(score_label, "SCORE 0");
+    lv_obj_set_style_text_font(score_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(score_label, lv_color_hex(0xF4FAFF), 0);
+    lv_obj_align(score_label, LV_ALIGN_TOP_MID, 0, 18);
+
+    board = lv_obj_create(screen);
+    lv_obj_set_size(board, SNAKE_GRID_COLUMNS * SNAKE_CELL_SIZE, SNAKE_GRID_ROWS * SNAKE_CELL_SIZE);
+    lv_obj_set_pos(board, SNAKE_GRID_X, SNAKE_GRID_Y);
+    lv_obj_clear_flag(board, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(board, 10, 0);
+    lv_obj_set_style_bg_color(board, lv_color_hex(0x10233A), 0);
+    lv_obj_set_style_bg_opa(board, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(board, 2, 0);
+    lv_obj_set_style_border_color(board, lv_color_hex(0x1E4666), 0);
+    lv_obj_set_style_pad_all(board, 0, 0);
+
+    status_label = lv_label_create(screen);
+    lv_obj_set_width(status_label, 220);
+    lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(status_label, &lv_font_montserrat_14, 0);
+    lv_obj_align(status_label, LV_ALIGN_BOTTOM_MID, 0, -13);
+    new_game();
+    lv_timer_create(game_tick, 20, NULL);
+}
+
+void microsnake_start(void)
+{
+    lv_obj_t *screen = lv_scr_act();
+    lv_obj_set_style_bg_color(screen, lv_color_hex(0x07111F), 0);
+    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
+    lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *forgeui = lv_label_create(screen);
+    lv_label_set_text(forgeui, "FORGEUI");
+    lv_obj_set_style_text_font(forgeui, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(forgeui, lv_color_hex(0xF4FAFF), 0);
+    lv_obj_align(forgeui, LV_ALIGN_CENTER, 0, -16);
+
+    lv_obj_t *title = lv_label_create(screen);
+    lv_label_set_text(title, "MICROSNAKE");
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(title, lv_color_hex(0x21D4C2), 0);
+    lv_obj_align(title, LV_ALIGN_CENTER, 0, 14);
+    lv_timer_create(create_game_screen, 1200, NULL);
+}

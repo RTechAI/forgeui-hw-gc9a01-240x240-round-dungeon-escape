@@ -1,5 +1,5 @@
 #include "display.h"
-#include "input/input_test_screen.h"
+#include "game/microsnake.h"
 
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -80,6 +80,6 @@ void displayConfig(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
     ESP_LOGI(TAG, "LVGL tick timer started at %d ms", EXAMPLE_LVGL_TICK_PERIOD_MS);
 
-    input_test_screen_create();
+    microsnake_start();
     assert(xTaskCreate(lvgl_task, "lvgl", 4096, NULL, 4, NULL) == pdPASS);
 }

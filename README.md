@@ -2,7 +2,7 @@
 
 ForgeUI MicroSnake is an official ForgeUI Hardware Lab Micro Project developed by RTechAI. It is a joystick-controlled embedded game built on the physically tested ESP32-S3 + GC9A01 240×240 round display baseline.
 
-**Project status:** INPUT ALIVE TEST — PHYSICAL PASS. The current firmware displays live joystick X/Y readings and a debounced button state using LVGL. Snake gameplay is not implemented.
+**Project status:** MicroSnake v0.1 — PHYSICAL PASS. It provides joystick-controlled snake movement, food, scoring, self-collision, and button restart.
 
 ## ForgeUI Ecosystem
 
@@ -22,7 +22,7 @@ RTechAI
 
 ## Micro Project Overview
 
-MicroSnake brings embedded game development to a small round display. Its planned joystick-controlled Snake game provides a practical way to explore ESP32-S3 graphics, LVGL rendering, input handling, and game logic.
+MicroSnake brings embedded game development to a small round display. Its joystick-controlled Snake game provides a practical way to explore ESP32-S3 graphics, LVGL rendering, input handling, and reusable Micro Project architecture.
 
 The project is intended for learning, experimentation, and hacking. Future expansion can introduce gameplay modes, animation, scoring, and other small-screen experiments on the proven hardware foundation.
 
@@ -33,7 +33,7 @@ The Micro Project concept:
 > Open the code.<br>
 > Hack it.
 
-For now, flashing runs the input test screen; playable MicroSnake will follow in a later development stage.
+Flashing starts MicroSnake with a short ForgeUI/MicroSnake startup screen, then enters the game.
 
 ## Hardware Foundation
 
@@ -45,7 +45,7 @@ MicroSnake builds on the physically tested [ForgeUI GC9A01 round-display baselin
 - Display: GC9A01 1.28-inch 240×240 round SPI TFT
 - No MISO connection and no separate backlight pin
 
-The baseline validated firmware build and flash, GC9A01 initialization and SPI rendering, LVGL startup, the ForgeUI ALIVE showcase, and GPIO10–GPIO14 flat-ribbon wiring. The evidence below records that hardware validation, not MicroSnake gameplay validation.
+The baseline validated firmware build and flash, GC9A01 initialization and SPI rendering, LVGL startup, the ForgeUI ALIVE showcase, and GPIO10–GPIO14 flat-ribbon wiring. MicroSnake v0.1 builds on that known-good platform and has passed physical gameplay validation.
 
 ## Display Wiring
 
@@ -62,7 +62,7 @@ The baseline validated firmware build and flash, GC9A01 initialization and SPI r
 
 GPIO10–GPIO14 are the physically proven flat-ribbon display connection. Do not change them.
 
-## Input Alive Test
+## Joystick Input Standard
 
 Connect a typical analog joystick module with power disconnected:
 
@@ -78,15 +78,19 @@ GPIO4/5/6 are exposed on the [Espressif DevKitC-1 header](https://docs.espressif
 
 `main/input/micro_input.h` exposes `micro_input_init()` and `micro_input_read()` for future Micro Projects. It has no LVGL or game dependency. A single caller polls about every 10 ms, receiving raw 12-bit X/Y counts, axis validity, and a button state debounced for 30 ms. ADC read errors invalidate the axes while button sampling continues.
 
-The test screen polls in the existing LVGL task and refreshes labels every 50 ms. ADC1 uses 12 dB attenuation; readings are uncalibrated counts from 0–4095, not voltage. The centre need not be exactly 2048, and values may saturate near an endpoint. Unconnected analog inputs float and do not prove joystick operation.
+The input layer polls in the existing LVGL task. ADC1 uses 12 dB attenuation; readings are uncalibrated counts from 0–4095, not voltage. MicroSnake v0.1 uses a centre deadzone and selects the stronger axis for each turn.
 
-Physical acceptance passed:
+The joystick input layer and MicroSnake v0.1 gameplay passed physical validation: both axes steer the snake, SW restarts the game after a self-collision, and the GC9A01 display remains stable.
 
-- Move each axis and confirm its displayed value changes.
-- Press and release SW and confirm PRESSED/RELEASED follows.
-- Confirm the round display remains stable with no GC9A01 regression.
+## MicroSnake v0.1 Gameplay
 
-The joystick test passed through physical input and display validation; this does not claim Snake gameplay validation.
+MicroSnake renders a 12×12 playfield inside the round display's safe area using LVGL primitives. Move the joystick to turn; the snake wraps at the playfield edges. Collect food to grow and add 10 points. A collision with the snake body ends the game. Press the joystick switch (SW) to restart after game over.
+
+`main/game/microsnake.c` contains game state, movement, collision, food placement, score handling, and LVGL game rendering. It consumes `main/input/micro_input.h` and contains no GPIO access. The retained `main/input/` layer remains the hardware boundary for future ForgeUI Micro Projects.
+
+## Physical Gameplay Evidence
+
+![ForgeUI MicroSnake v0.1 running on the GC9A01 round display](docs/images/Snake-gc9a01-round-alive-1.png)
 
 ## Software Stack
 
@@ -98,7 +102,7 @@ The joystick test passed through physical input and display validation; this doe
 - 8 MiB auto-detected octal PSRAM at 80 MHz DDR
 - `CONFIG_SPIRAM_USE_MEMMAP=y`: PSRAM is initialized and mapped, without malloc-heap integration
 
-The firmware now uses an LVGL-only MicroSnake input test screen without external assets. The GC9A01 driver, LVGL runtime/configuration, ESP-IDF configuration, flash configuration, and PSRAM configuration are retained from the hardware foundation. The main component source list adds the input layer and test screen; ADC support uses the ESP-IDF component already included by the main component.
+The firmware now uses an LVGL-only MicroSnake v0.1 game screen without external assets. The GC9A01 driver, LVGL runtime/configuration, ESP-IDF configuration, flash configuration, and PSRAM configuration are retained from the hardware foundation. The main component source list adds the game module; ADC support uses the ESP-IDF component already included by the main component.
 
 ## Build and Flash
 
@@ -110,7 +114,7 @@ idf.py -p COMx flash
 idf.py -p COMx monitor
 ```
 
-Replace `COMx` with the detected port. Use `Ctrl-]` to exit the monitor. These commands run the input test firmware.
+Replace `COMx` with the detected port. Use `Ctrl-]` to exit the monitor. These commands run MicroSnake v0.1.
 
 ## Hardware Foundation Evidence
 
