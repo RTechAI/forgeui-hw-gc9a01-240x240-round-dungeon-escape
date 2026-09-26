@@ -6,7 +6,7 @@
 #include "esp_timer.h"
 
 static const char *TAG = "forgeui_display";
-lv_disp_drv_t disp_drv;
+lv_display_t *display;
 
 static volatile uint32_t flush_count;
 static volatile uint32_t flush_ready_count;
@@ -16,11 +16,12 @@ bool display_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io,
                                      void *user_ctx)
 {
     flush_ready_count++;
-    lv_disp_flush_ready((lv_disp_drv_t *)user_ctx);
+    /* Panel IO is initialized first; display is set before any LVGL flush. */
+    lv_display_flush_ready(*(lv_display_t **)user_ctx);
     return false;
 }
 
-static void lvgl_flush_cb(lv_disp_drv_t *driver, const lv_area_t *area, lv_color_t *color_map)
+static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *color_map)
 {
     flush_count++;
     if (flush_count <= 3) {
@@ -28,7 +29,9 @@ static void lvgl_flush_cb(lv_disp_drv_t *driver, const lv_area_t *area, lv_color
                  (unsigned long)flush_count, area->x1, area->y1, area->x2, area->y2, color_map);
     }
 
-    esp_lcd_panel_handle_t panel = (esp_lcd_panel_handle_t)driver->user_data;
+    esp_lcd_panel_handle_t panel = lv_display_get_user_data(disp);
+    /* LVGL 9 replaces LV_COLOR_16_SWAP with explicit RGB565 transport swapping. */
+    lv_draw_sw_rgb565_swap(color_map, lv_area_get_width(area) * lv_area_get_height(area));
     ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel, area->x1, area->y1,
                                                area->x2 + 1, area->y2 + 1, color_map));
 }
@@ -48,27 +51,26 @@ static void lvgl_task(void *arg)
             ESP_LOGI(TAG, "LVGL handler alive; flush=%lu ready=%lu",
                      (unsigned long)flush_count, (unsigned long)flush_ready_count);
         }
-        vTaskDelay(pdMS_TO_TICKS(5));
+        /* At 100 Hz, 5 ms rounds to zero: always let the idle task run. */
+        vTaskDelay(pdMS_TO_TICKS(5) > 0 ? pdMS_TO_TICKS(5) : 1);
     }
 }
 
 void displayConfig(void (*start_ui)(void))
 {
-    static lv_disp_draw_buf_t draw_buffer;
-    lv_color_t *buffer_a = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
-    lv_color_t *buffer_b = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    const size_t buffer_size = EXAMPLE_LCD_H_RES * 20 * sizeof(uint16_t);
+    uint8_t *buffer_a = heap_caps_malloc(buffer_size, MALLOC_CAP_DMA);
+    uint8_t *buffer_b = heap_caps_malloc(buffer_size, MALLOC_CAP_DMA);
     assert(buffer_a && buffer_b);
 
     ESP_LOGI(TAG, "Initialize LVGL; buffers=%p,%p", buffer_a, buffer_b);
     lv_init();
-    lv_disp_draw_buf_init(&draw_buffer, buffer_a, buffer_b, EXAMPLE_LCD_H_RES * 20);
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.hor_res = EXAMPLE_LCD_H_RES;
-    disp_drv.ver_res = EXAMPLE_LCD_V_RES;
-    disp_drv.flush_cb = lvgl_flush_cb;
-    disp_drv.draw_buf = &draw_buffer;
-    disp_drv.user_data = panel_handle;
-    lv_disp_drv_register(&disp_drv);
+    display = lv_display_create(EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES);
+    assert(display);
+    lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
+    lv_display_set_buffers(display, buffer_a, buffer_b, buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_set_user_data(display, panel_handle);
+    lv_display_set_flush_cb(display, lvgl_flush_cb);
     ESP_LOGI(TAG, "LVGL display driver registered: %dx%d", EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES);
 
     const esp_timer_create_args_t tick_timer_args = {
@@ -81,5 +83,5 @@ void displayConfig(void (*start_ui)(void))
     ESP_LOGI(TAG, "LVGL tick timer started at %d ms", EXAMPLE_LVGL_TICK_PERIOD_MS);
 
     if (start_ui) start_ui();
-    assert(xTaskCreate(lvgl_task, "lvgl", 4096, NULL, 4, NULL) == pdPASS);
+    assert(xTaskCreate(lvgl_task, "lvgl", 8192, NULL, 4, NULL) == pdPASS);
 }

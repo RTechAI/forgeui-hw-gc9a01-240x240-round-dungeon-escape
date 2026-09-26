@@ -28,16 +28,16 @@ dependencies:
       type: idf
     version: 5.5.4
   lvgl/lvgl:
-    component_hash: 948bff879a345149b83065535bbc4a026ce9f47498a22881e432a264b9098015
+    component_hash: 096c69af22eaf8a2b721e3913da91918c5e6bf1a762a113ec01f401aa61337a0
     dependencies: []
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 8.3.11
+    version: 9.2.2
 direct_dependencies:
 - espressif/esp_lcd_gc9a01
 - idf
 - lvgl/lvgl
-manifest_hash: 33d58039c5cb2817bad187ecf227568b04e03314833cce362da680b89310a43e
+manifest_hash: 191ac4dcf7b2b23e8971eb39190813c744406e564e0202f928c000429f940d9d
 target: esp32s3
 version: 2.0.0

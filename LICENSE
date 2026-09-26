@@ -1,0 +1,41 @@
+ForgeUI Micro Games Attribution Licence
+
+Copyright (c) 2026 RTechAI / ForgeUI
+
+Permission is granted to use, study, modify, and create derivative works from this project for educational, personal, and embedded development purposes.
+
+Conditions:
+
+1. Attribution
+
+Any public use, redistribution, publication, demonstration, or derivative work must acknowledge:
+
+"Based on ForgeUI Dungeon Escape by RTechAI / ForgeUI"
+
+and retain the original copyright notices.
+
+2. ForgeUI Identity
+
+The ForgeUI name, trademarks, logos, branding, and product identity are not granted for use without permission.
+
+Modified versions must not imply official ForgeUI endorsement unless approved.
+
+3. Source Preservation
+
+When distributing modified versions, retain attribution information and document significant changes.
+
+4. Third Party Components
+
+This project includes third-party software components which remain subject to their own licences:
+
+- LVGL
+- ESP-IDF
+- Espressif components
+
+5. Commercial Use
+
+Commercial use is permitted provided attribution is maintained and the project identity is not misrepresented.
+
+6. No Warranty
+
+This software is provided "as is" without warranty of any kind.

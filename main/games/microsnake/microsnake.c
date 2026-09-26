@@ -110,7 +110,7 @@ static void place_food(void)
 static void draw_cell(snake_cell_t cell, lv_color_t color, uint8_t radius)
 {
     lv_obj_t *block = lv_obj_create(board);
-    lv_obj_clear_flag(block, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(block, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(block, SNAKE_CELL_SIZE - 2, SNAKE_CELL_SIZE - 2);
     lv_obj_set_pos(block, SNAKE_GRID_X + cell.x * SNAKE_CELL_SIZE + 1, SNAKE_GRID_Y + cell.y * SNAKE_CELL_SIZE + 1);
     lv_obj_set_style_radius(block, radius, 0);
@@ -200,11 +200,11 @@ void microsnake_tick(const micro_input_state_t *input)
 void microsnake_start(void)
 {
     previous_button = true;
-    lv_obj_clean(lv_scr_act());
-    lv_obj_t *screen = lv_scr_act();
+    lv_obj_clean(lv_screen_active());
+    lv_obj_t *screen = lv_screen_active();
     lv_obj_set_style_bg_color(screen, lv_color_hex(0x07111F), 0);
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
-    lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
 
     score_label = lv_label_create(screen);
     lv_label_set_text(score_label, "SCORE 0");
@@ -215,7 +215,7 @@ void microsnake_start(void)
     lv_obj_t *rim = lv_obj_create(screen);
     lv_obj_set_size(rim, 234, 234);
     lv_obj_center(rim);
-    lv_obj_clear_flag(rim, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(rim, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_radius(rim, LV_RADIUS_CIRCLE, 0);
     lv_obj_set_style_bg_opa(rim, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(rim, 1, 0);
@@ -225,7 +225,7 @@ void microsnake_start(void)
     lv_obj_remove_style_all(board);
     lv_obj_set_size(board, 240, 240);
     lv_obj_set_pos(board, 0, 0);
-    lv_obj_clear_flag(board, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(board, LV_OBJ_FLAG_SCROLLABLE);
     status_label = lv_label_create(screen);
     lv_obj_set_width(status_label, 140);
     lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_CENTER, 0);

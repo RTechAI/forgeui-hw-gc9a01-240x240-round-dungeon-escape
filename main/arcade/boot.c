@@ -25,14 +25,14 @@ static void animate(lv_obj_t *obj, lv_anim_exec_xcb_t callback, int from, int to
     lv_anim_set_var(&anim, obj);
     lv_anim_set_exec_cb(&anim, callback);
     lv_anim_set_values(&anim, from, to);
-    lv_anim_set_time(&anim, duration);
+    lv_anim_set_duration(&anim, duration);
     lv_anim_start(&anim);
     /* LVGL automatically removes object animations when the host cleans up. */
 }
 
 static void label(const char *text, int y, uint32_t color, int spacing)
 {
-    lv_obj_t *obj = lv_label_create(lv_scr_act());
+    lv_obj_t *obj = lv_label_create(lv_screen_active());
     lv_label_set_text(obj, text);
     lv_obj_set_style_text_color(obj, lv_color_hex(color), 0);
     lv_obj_set_style_text_letter_space(obj, spacing, 0);
@@ -41,10 +41,10 @@ static void label(const char *text, int y, uint32_t color, int spacing)
 
 void arcade_boot_show(void)
 {
-    lv_obj_t *screen = lv_scr_act();
+    lv_obj_t *screen = lv_screen_active();
     lv_obj_set_style_bg_color(screen, lv_color_hex(0x07111F), 0);
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
-    lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
     for (int i = 0; i < 3; ++i) {
         lv_obj_t *ring = lv_arc_create(screen);
         lv_obj_remove_style_all(ring);
@@ -54,7 +54,7 @@ void arcade_boot_show(void)
         lv_obj_set_style_arc_opa(ring, LV_OPA_COVER, LV_PART_MAIN);
         lv_obj_set_style_arc_rounded(ring, true, LV_PART_MAIN);
         lv_arc_set_bg_angles(ring, 0, i == 1 ? 110 : 265);
-        lv_obj_clear_flag(ring, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_remove_flag(ring, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
         animate(ring, sweep, i * 120, i * 120 + (i == 1 ? 600 : 300), 2400);
     }
     for (int i = 0; i < 10; ++i) {

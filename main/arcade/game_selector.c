@@ -41,10 +41,10 @@ void game_selector_show(const arcade_game_t *games, size_t count, size_t selecte
 {
     entries = games;
     entry_count = count;
-    lv_obj_t *screen = lv_scr_act();
+    lv_obj_t *screen = lv_screen_active();
     lv_obj_set_style_bg_color(screen, lv_color_hex(0x07111F), 0);
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
-    lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_t *rim = lv_obj_create(screen);
     lv_obj_remove_style_all(rim);
     lv_obj_set_size(rim, 234, 234);
@@ -52,15 +52,15 @@ void game_selector_show(const arcade_game_t *games, size_t count, size_t selecte
     lv_obj_set_style_radius(rim, LV_RADIUS_CIRCLE, 0);
     lv_obj_set_style_border_width(rim, 1, 0);
     lv_obj_set_style_border_color(rim, lv_color_hex(0x215460), 0);
-    lv_obj_clear_flag(rim, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(rim, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
     label(screen, "FORGEUI", 24, 0x21D4C2);
     label(screen, "MICRO GAMES", 43, 0xE1F7F8);
-    label(screen, "MICRODOOM / 3D TEST", 65, 0x75929E);
+    label(screen, "DUNGEON / LEVEL 1", 65, 0x75929E);
     list = lv_obj_create(screen);
     lv_obj_remove_style_all(list);
     lv_obj_set_size(list, 196, 103);
     lv_obj_set_pos(list, 22, 84);
-    lv_obj_clear_flag(list, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(list, LV_OBJ_FLAG_SCROLLABLE);
     hint = label(screen, "", 188, 0x21D4C2);
     label(screen, "UP / DOWN", 205, 0x75929E);
     if (count) game_selector_select(selected < count ? selected : 0);

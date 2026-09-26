@@ -2,6 +2,7 @@ build/
 build-*/
 .vscode/
 dependencies.lock
+!dependencies.lock
 .cache/
 __pycache__/
 *.pyc

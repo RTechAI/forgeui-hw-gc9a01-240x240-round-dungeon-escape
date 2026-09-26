@@ -190,25 +190,25 @@ static void step(float rotation, float power)
     if (!remaining && !dead) spawn_wave();
 }
 
-static void line(lv_draw_ctx_t *ctx, float ax, float ay, float bx, float by, uint32_t color, int width)
+static void line(lv_layer_t *layer, float ax, float ay, float bx, float by, uint32_t color, int width)
 {
     lv_draw_line_dsc_t d;
     lv_draw_line_dsc_init(&d);
     d.color = lv_color_hex(color);
     d.width = width;
-    lv_point_t a = {(lv_coord_t)lroundf(120 + ax), (lv_coord_t)lroundf(120 + ay)};
-    lv_point_t b = {(lv_coord_t)lroundf(120 + bx), (lv_coord_t)lroundf(120 + by)};
-    lv_draw_line(ctx, &d, &a, &b);
+    d.p1 = (lv_point_precise_t){lroundf(120 + ax), lroundf(120 + ay)};
+    d.p2 = (lv_point_precise_t){lroundf(120 + bx), lroundf(120 + by)};
+    lv_draw_line(layer, &d);
 }
 
 static void draw(lv_event_t *event)
 {
-    lv_draw_ctx_t *ctx = lv_event_get_draw_ctx(event);
+    lv_layer_t *layer = lv_event_get_layer(event);
     /* Deterministic stars; rendering never mutates simulation or RNG. */
     for (int i = 0; i < 24; ++i) {
         float a = i * 2.39996f, r = 25 + (i * 37 % 90);
         float sx = cosf(a) * r, sy = sinf(a) * r;
-        line(ctx, sx, sy, sx + 1, sy, 0x294451, 1);
+        line(layer, sx, sy, sx + 1, sy, 0x294451, 1);
     }
     for (int i = 0; i < ROCKS; ++i) {
         rock_t *r = &rocks[i];
@@ -217,31 +217,31 @@ static void draw(lv_event_t *event)
             float a = r->angle + j * PI / 4, b = a + PI / 4;
             float ra = r->radius * (j % 2 ? 0.78f : 1);
             float rb = r->radius * (j % 2 ? 1 : 0.78f);
-            line(ctx, r->x + cosf(a) * ra, r->y + sinf(a) * ra,
+            line(layer, r->x + cosf(a) * ra, r->y + sinf(a) * ra,
                  r->x + cosf(b) * rb, r->y + sinf(b) * rb, 0x80ABBD, 2);
         }
     }
     for (int i = 0; i < SHOTS; ++i) if (shots[i].life > 0)
-        line(ctx, shots[i].x, shots[i].y, shots[i].x - shots[i].vx * 0.018f,
+        line(layer, shots[i].x, shots[i].y, shots[i].x - shots[i].vx * 0.018f,
              shots[i].y - shots[i].vy * 0.018f, 0xDEFFAE, 2);
     for (int i = 0; i < SPARKS; ++i) if (sparks[i].life > 0)
-        line(ctx, sparks[i].x, sparks[i].y, sparks[i].x - sparks[i].vx * 0.03f,
+        line(layer, sparks[i].x, sparks[i].y, sparks[i].x - sparks[i].vx * 0.03f,
              sparks[i].y - sparks[i].vy * 0.03f, 0xFFBE70, 1);
     if (dead) return;
     float c = cosf(heading), s = sinf(heading);
     const float px[] = {9, -6, -3, -6, 9}, py[] = {0, 6, 0, -6, 0};
     uint32_t color = shield > 0 && ((int)(shield * 8) % 2) ? 0x71929F : 0x32E6D0;
     for (int i = 0; i < 4; ++i)
-        line(ctx, x + px[i] * c - py[i] * s, y + px[i] * s + py[i] * c,
+        line(layer, x + px[i] * c - py[i] * s, y + px[i] * s + py[i] * c,
              x + px[i+1] * c - py[i+1] * s, y + px[i+1] * s + py[i+1] * c, color, 2);
     if (thrust > 0.05f)
-        line(ctx, x - 6 * c, y - 6 * s, x - (9 + thrust * 8) * c,
+        line(layer, x - 6 * c, y - 6 * s, x - (9 + thrust * 8) * c,
              y - (9 + thrust * 8) * s, 0xFFBE70, 2);
 }
 
 static lv_obj_t *label(const char *text, int y_pos, uint32_t color)
 {
-    lv_obj_t *obj = lv_label_create(lv_scr_act());
+    lv_obj_t *obj = lv_label_create(lv_screen_active());
     lv_label_set_text(obj, text);
     lv_obj_set_style_text_color(obj, lv_color_hex(color), 0);
     lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, 0);
@@ -251,12 +251,12 @@ static lv_obj_t *label(const char *text, int y_pos, uint32_t color)
 
 void microasteroids_start(void)
 {
-    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x07111F), 0);
-    field = lv_obj_create(lv_scr_act());
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x07111F), 0);
+    field = lv_obj_create(lv_screen_active());
     lv_obj_remove_style_all(field);
     lv_obj_set_size(field, 240, 240);
     lv_obj_set_pos(field, 0, 0);
-    lv_obj_clear_flag(field, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(field, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(field, draw, LV_EVENT_DRAW_MAIN, NULL);
     hud = label("", 20, 0xDFF8F5);
     message = label("", 87, 0xDFF8F5);

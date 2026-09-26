@@ -2,11 +2,11 @@
 #include "game_selector.h"
 #include "boot.h"
 #include "games/microsnake/microsnake.h"
-#include "engine/microdoom.h"
+#include "game/dungeon_escape.h"
 #include "lvgl.h"
 
 static const arcade_game_t games[] = {
-    {"MicroDOOM", microdoom_start, microdoom_tick, microdoom_stop},
+    {"Dungeon Escape", dungeon_escape_start, dungeon_escape_tick, dungeon_escape_stop},
     {"MicroSnake", microsnake_start, microsnake_tick, microsnake_stop},
     {"Coming Soon", NULL, NULL, NULL},
 };
@@ -24,7 +24,7 @@ static void show_selector(void)
 {
     if (active && active->stop) active->stop();
     active = NULL;
-    lv_obj_clean(lv_scr_act());
+    lv_obj_clean(lv_screen_active());
     game_selector_show(games, GAME_COUNT, selected);
     state = SELECTOR;
     button_armed = false;
@@ -73,7 +73,7 @@ static void arcade_tick(lv_timer_t *timer)
         return;
     }
     active = &games[selected];
-    lv_obj_clean(lv_scr_act());
+    lv_obj_clean(lv_screen_active());
     state = PLAYING;
     button_armed = false; /* Launch press cannot restart or exit the game. */
     hold_tracking = false;
