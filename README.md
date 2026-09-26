@@ -116,16 +116,6 @@ idf.py -p COMx monitor
 
 Replace `COMx` with the detected port. Use `Ctrl-]` to exit the monitor. These commands run MicroSnake v0.1.
 
-## Hardware Foundation Evidence
-
-| Image | Evidence |
-| --- | --- |
-| [gc9a01-round-alive-boot.png](docs/images/gc9a01-round-alive-boot.png) | ForgeUI Hardware Lab startup sequence on the ESP32-S3 N16R8. |
-| [gc9a01-round-alive-showcase.png](docs/images/gc9a01-round-alive-showcase.png) | Animated ForgeUI GC9A01 LVGL ALIVE showcase. |
-| [gc9a01-round-hardware-validation.png](docs/images/gc9a01-round-hardware-validation.png) | Physical GC9A01 240×240 round-display hardware evidence. |
-
-![ForgeUI GC9A01 hardware foundation ALIVE showcase](docs/images/gc9a01-round-alive-showcase.png)
-
 ## Related ForgeUI Projects
 
 - [GC9A01 Round Display Baseline](https://github.com/RTechAI/forgeui-hw-gc9a01-240x240-round) — MicroSnake's physically tested hardware foundation.
@@ -138,6 +128,10 @@ Replace `COMx` with the detected port. Use `Ctrl-]` to exit the monitor. These c
 ForgeUI Hardware Lab is an RTechAI collection of physically tested ESP32 boards, displays, peripherals, examples, and experimental projects. Each project documents hardware identity, wiring configuration, software baseline, reproducible build process, and physical validation evidence.
 
 Micro Projects build focused applications on these proven foundations. MicroSnake is an official ForgeUI Hardware Lab Micro Project developed by RTechAI. Its hardware lineage does not imply current ForgeUI Studio target integration.
+
+## About ForgeUI
+
+ForgeUI is developed by RTechAI. ForgeUI Studio is a visual embedded UI/HMI development environment for supported ESP32 hardware, while ForgeUI Hardware Lab provides the physically tested hardware foundations and focused Micro Projects that support hands-on development.
 
 ## Attribution
 
