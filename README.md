@@ -1,35 +1,34 @@
-# ForgeUI MicroPong
+# ForgeUI MicroAsteroids — ESP32-S3 + GC9A01 240×240 Round
 
-ForgeUI MicroPong is an official ForgeUI Hardware Lab Micro Project developed by RTechAI. MicroPong is the featured game, with MicroSnake included as a playable bonus example. It is built on the ForgeUI Micro Arcade framework and the physically tested GC9A01 240×240 round display baseline.
+ForgeUI MicroAsteroids is an official ForgeUI Hardware Lab Micro Project developed by RTechAI. It is an Asteroids-style embedded arcade game built on the ForgeUI Micro Arcade framework and the physically tested GC9A01 240×240 round display baseline.
 
 ## Project overview
 
-MicroPong brings joystick-controlled Pong to a circular ESP32-S3 display. It demonstrates LVGL graphics, joystick input, modular game architecture, and small-screen embedded development. Micro Arcade provides the boot and launcher framework; each game owns its gameplay and rendering.
+MicroAsteroids is the featured game, with MicroSnake included as a playable bonus example. ForgeUI Micro Arcade is the launcher framework: it provides the animated boot, game selector and shared game lifecycle. Each game lives in a separate module on the full circular display.
 
-> Flash it.
-> Play it.
-> Open the code.
-> Hack it.
+Ship outlines, spinning asteroid fragments, starfields and impact sparks use LVGL primitives only. The firmware requires no external image assets.
 
-**Status: PHYSICAL PASS — validated by Scott.** The selector defaults to MicroPong, followed by the MicroSnake bonus game and a MicroAsteroids placeholder.
+**Status: PHYSICAL PASS — validated by Scott.** Boot, game selector, MicroAsteroids gameplay and the MicroSnake bonus example have passed physical validation.
 
 ## ForgeUI Ecosystem
 
 ForgeUI is developed by [RTechAI](https://github.com/RTechAI).
 
-- [ForgeUI website](https://forgeui.co.nz/): the ForgeUI platform.
-- [ForgeUI Studio](https://github.com/RTechAI/esp32p4-ui-studio): the visual embedded UI/HMI development environment.
-- [ForgeUI Hosted Studio](https://studio.forgeui.co.nz/): the browser-based Studio.
-- [RTechAI GitHub organisation](https://github.com/RTechAI): ForgeUI repositories and examples.
-- [ForgeUI Hardware Lab](#forgeui-hardware-lab): physically tested hardware foundations and Micro Projects.
+- [ForgeUI website](https://forgeui.co.nz/)
+- [ForgeUI Studio](https://github.com/RTechAI/esp32p4-ui-studio)
+- [ForgeUI Hosted Studio](https://studio.forgeui.co.nz/)
+- [RTechAI GitHub organisation](https://github.com/RTechAI)
+- [ForgeUI Hardware Lab](#forgeui-hardware-lab)
 
 ## ForgeUI Hardware Lab
 
-MicroPong builds on the [GC9A01 round-display baseline](https://github.com/RTechAI/forgeui-hw-gc9a01-240x240-round) and reuses the input and display foundation from the standalone [MicroSnake](https://github.com/RTechAI/forgeui-hw-gc9a01-240x240-round-microsnake) example. That repository remains separate and unchanged. Hardware lineage does not imply Studio target integration. Scott has physically validated this MicroPong release.
+This project uses the physically tested [GC9A01 round-display platform](https://github.com/RTechAI/forgeui-hw-gc9a01-240x240-round) and the shared input/display foundation from [MicroSnake](https://github.com/RTechAI/forgeui-hw-gc9a01-240x240-round-microsnake). These are ForgeUI Hardware Lab foundations and Micro Projects; hardware lineage does not imply Studio target integration.
 
-## Locked hardware
+## Hardware reference
 
-ESP32-S3 N16R8, 16 MiB flash, 8 MiB octal PSRAM, GC9A01 240×240 round SPI TFT.
+**ESP32-S3 N16R8:** 16 MiB Flash, 8 MiB PSRAM.
+
+**GC9A01:** 240×240 round TFT.
 
 | Connection | GPIO |
 | --- | --- |
@@ -42,38 +41,71 @@ ESP32-S3 N16R8, 16 MiB flash, 8 MiB octal PSRAM, GC9A01 240×240 round SPI TFT.
 | Joystick VRY | 5 |
 | Joystick SW | 6 |
 
-Use the baseline 3.3 V supply and common ground. No MISO or separate backlight GPIO. Display: SPI2, mode 0, 20 MHz, RGB565 with LVGL byte swap; existing inversion and mirroring retained. Input: ADC1 channels 3/4, 12-bit, 12 dB attenuation, active-low switch with 30 ms debounce. The hardware input files and panel driver are copied unchanged.
+Use the baseline 3.3 V supply and common ground. No MISO or separate backlight GPIO. Display remains SPI2, mode 0, 20 MHz, RGB565 with LVGL byte swap and existing inversion/mirroring. Joystick input remains ADC1 channels 3/4, 12-bit, 12 dB attenuation, active-low switch and 30 ms debounce.
 
-Flash remains DIO at 80 MHz. PSRAM remains auto-detected octal at 80 MHz, memory-mapped without malloc integration. The baseline disables the boot PSRAM memory test to avoid the early watchdog timeout. DMA draw buffers, LVGL tick, and handler task are unchanged; display initialization now accepts an application startup callback.
+Flash remains DIO at 80 MHz. PSRAM remains auto-detected octal at 80 MHz, memory-mapped without malloc integration. The baseline boot PSRAM memory test remains disabled to avoid the early watchdog timeout. Display driver, LVGL transport, DMA buffers, LVGL tick/handler task, input driver and board configuration are unchanged.
 
-## Boot and controls
+## Boot and game selector
 
-The LVGL-only boot shows FORGEUI / MICRO ARCADE / READY on a dark background, with a lightweight cyan ring fade. After 1.6 seconds the selector opens.
+The 2.4-second FORGEUI / MICRO ARCADE ident fills the circular display with three animated arc sweeps, teal/cyan colour transitions and subtly orbiting stars. LVGL removes the boot animations when the selector opens.
 
-- Joystick UP/DOWN: select an entry; return to center between moves.
-- Button: launch the selected game. MicroAsteroids displays COMING SOON.
-- Hold button for one second in gameplay: return to the selector. Release the launch button first.
+The selector shows FORGEUI MICRO GAMES with:
 
-The round-display selector lists MicroPong first, MicroSnake second, and MicroAsteroids as a coming-soon placeholder. MicroPong is selected by default.
+- **> MicroAsteroids** — featured and selected by default.
+- **MicroSnake** — playable bonus example.
+- **Coming Soon** — reserved for a future module.
 
-## MicroPong gameplay
+Move up/down, returning to centre between selections. Press to launch. Hold the button for one second during either game to return to the selector; release the launch press first.
 
-The full circular court uses curved paddles around the perimeter, a bright ball, a dark background, and cyan/teal accents. All visuals are LVGL primitives; paddle and ball movement supply the animation. There is no inset square court.
+## MicroAsteroids gameplay
 
-- You control the cyan left paddle with joystick UP/DOWN. Deflection controls paddle speed; the center deadzone holds position.
-- The AI controls the blue right paddle with limited speed and a tracking deadzone.
-- The top/bottom sectors reflect the ball. Missing a paddle in either side sector awards the opponent a point.
-- Paddle contact aims the ball inward with an offset based on the contact position. Ball speed rises with rallies, up to a fixed cap.
-- Each point has a 900 ms READY serve delay. First to seven wins; the game freezes with YOU WIN or AI WINS.
-- A short button press/release resets the match at any time. Holding for one second returns to the selector.
+- **Left/right:** rotate; deflection controls rotation speed.
+- **Up:** forward thrust. **Down:** reverse thrust. Release to coast with gentle drag.
+- **Tap:** fire on press. Release between shots. A one-second hold returns to the menu.
+- Large asteroids score **20 points**, splitting into two fragments worth **50 points each**.
+- Clear the field to advance waves. Asteroid count and speed increase to fixed caps.
+- Ship and asteroids wrap across the circular bezel to the opposite edge. There is no square game window.
+- A blinking **1.5-second shield** protects the ship at launch and each new wave.
+- Collision ends the run. Game over shows score and session best. **Tap and release to retry**, or hold for the menu. Best score lasts until reboot.
 
-The game owns its ball physics, paddle movement, AI, scoring, serve and game-over states, rendering, and restart behavior in main/games/micropong/. Physics uses 5 ms steps with bounded catch-up after a stall, avoiding large collision jumps. LVGL objects are reused during play. No additional task or timer is created.
+The separate module owns movement, rotation, firing, collisions, scoring, waves, game over and restart. Fixed pools hold 12 asteroids, 8 shots and 16 sparks. Simulation uses 10 ms steps with catch-up capped at 50 ms; redraw requests are limited to about 30 per second. Actual frame rate depends on the existing display transport. No private game task/timer or per-frame LVGL object allocation is added.
 
-## MicroSnake bonus game
+## MicroSnake bonus example
 
-MicroSnake is included as a bonus game example. Steer with both joystick axes, collect pink food for 10 points, and avoid the snake's body. The snake wraps to the opposite playable edge of its circular row or column. Press the button after game over to restart, or hold it for one second to return to the launcher.
+The existing module is preserved unchanged. Steer with both joystick axes, collect pink food for 10 points, and avoid the snake's body. The snake wraps across its circular row or column. Press after game over to restart, or hold for one second for the selector. The arena retains its edge-safe HUD, perimeter ring and 72-segment cap.
 
-The game uses a full-screen LVGL layer with a circular arena, edge-safe score/status areas, and a subtle perimeter ring. Food appears only in playable unoccupied cells; snake length is capped at 72 segments.
+## Micro Arcade framework and architecture
+
+```text
+main/
+  main.c
+  arcade/
+    arcade.c / arcade.h                 lifecycle and shared input sample
+    boot.c / boot.h                     animated console ident
+    game_selector.c / game_selector.h   registry-based selector
+  games/
+    microasteroids/                     standalone featured game
+    microsnake/                         preserved bonus example
+  input/
+    micro_input.c / micro_input.h       shared joystick input
+  display/
+    display.c / display.h               unchanged LVGL transport
+    gc9a01.c / gc9a01.h                 unchanged panel driver
+```
+
+The launcher polls input once every 10 ms on the LVGL task and passes the sample to the active game. Each module implements start/tick/stop. Game logic stays in each module. Stop releases module-owned resources; the host deletes screen children. All UI operations run on the existing LVGL task, with startup performed before the task begins.
+
+To add a game, register its callbacks in `arcade.c` and add its source to `main/CMakeLists.txt`. A NULL start marks a coming-soon entry.
+
+## Build and flash
+
+Use the baseline ESP-IDF 5.5.4 in an ESP-IDF-enabled terminal. CMake sets the target to `esp32s3`. Tracked `sdkconfig.defaults` supplies board defaults. Dependencies remain LVGL ~8.3.0 and espressif/esp_lcd_gc9a01 ^1.0; the local baseline resolves to 8.3.11 and 1.2.0.
+
+```powershell
+idf.py -B build-microasteroids -p COM10 build flash
+```
+
+Replace COM10 if the connected board uses another port. Keep `.vscode/settings.json`, build output, generated files and caches out of commits.
 
 ## Physical validation
 
@@ -83,66 +115,27 @@ Scott confirmed physical PASS for this release:
 | --- | --- |
 | ForgeUI Micro Arcade boot | PASS |
 | Game selector | PASS |
-| MicroPong featured gameplay | PASS |
-| MicroSnake bonus game | PASS |
+| MicroAsteroids featured gameplay | PASS |
+| MicroSnake bonus example | PASS |
 
-The firmware build and flash to the ESP32-S3 on COM10 also passed. This documentation checkpoint does not change firmware or require another build/flash cycle.
+The ESP-IDF 5.5.4 firmware build and flash to the ESP32-S3 on COM10 passed, with flash data hashes verified. This final documentation checkpoint changes no firmware and does not require another build/flash cycle.
 
-### Hardware evidence
+### Hardware photographs
 
-MicroPong running on the GC9A01 round display:
+ForgeUI Micro Arcade boot on the GC9A01 round display:
 
-![MicroPong gameplay with curved paddles and score](docs/images/forgeui-micro-archade-gc9a01-round-pong-1.png)
+![ForgeUI Micro Arcade boot with circular cyan rings](docs/images/forgeui-micro-games-microasteroids.png)
 
-ForgeUI Micro Arcade boot:
+[Additional boot photograph](docs/images/forgeui-micro-games-microasteroids3.png)
 
-![ForgeUI Micro Arcade boot screen](docs/images/forgeui-micro-archade-gc9a01-round-1.png)
+Game selector with MicroAsteroids featured and MicroSnake available:
 
-[Earlier Micro Arcade selector photograph](docs/images/forgeui-micro-archade-gc9a01-round-2.png) shows the framework before MicroPong became the first/default entry. The current release lists MicroPong first.
+![ForgeUI Micro Games selector with MicroAsteroids selected](docs/images/forgeui-micro-games-microasteroids%202.png)
 
-## Architecture
+MicroAsteroids running on the circular display:
 
-~~~text
-main/
-  main.c
-  arcade/
-    arcade.c
-    arcade.h
-    game_selector.c
-    game_selector.h
-  games/
-    micropong/
-      micropong.c
-      micropong.h
-    microsnake/
-      microsnake.c
-      microsnake.h
-  input/
-    micro_input.c
-    micro_input.h
-  display/
-    display.c
-    display.h
-    gc9a01.c
-    gc9a01.h
-~~~
-
-The launcher owns boot, selection, launch, and return-to-menu lifecycle. It polls input once every 10 ms on the LVGL task and passes the sample to the active game. Each game owns its gameplay, rendering, state, and rules. No game logic lives in the launcher or selector.
-
-To add a future module, implement start/tick/stop callbacks, add its source to main/CMakeLists.txt, and register its name and callbacks in arcade.c. The selector consumes the registry without game-specific changes. A NULL start marks a placeholder. Stop must release any module-owned resources and cancel private timers; the host then cleans screen children. Both games have no private timer or heap allocations beyond LVGL objects. All UI operations run on the existing LVGL task, with startup performed before that task starts.
-
-This project adds no sound, speakers, extra hardware, DOOM, or networking. It uses no external image assets.
-
-## Build and flash
-
-Use the baseline ESP-IDF 5.5.4 installation. Target is set to esp32s3 in CMakeLists.txt. Tracked sdkconfig.defaults supplies the board defaults; ESP-IDF generates the local sdkconfig. Use a dedicated build directory as shown below. Dependencies are LVGL ~8.3.0 and espressif/esp_lcd_gc9a01 ^1.0; the baseline resolves to 8.3.11 and 1.2.0.
-
-~~~powershell
-idf.py -B build-micropong -p COMx build flash
-~~~
-
-Run from an ESP-IDF-enabled terminal in the repository root. Replace COMx with the connected board's serial port (COM10 for the validated build). Keep build output, managed dependencies, generated configuration, caches, and local .vscode/settings.json changes out of release commits.
+![MicroAsteroids ship and asteroids on the GC9A01](docs/images/forgeui-micro-games-microasteroids4.png)
 
 ## Attribution
 
-ForgeUI MicroPong is developed by RTechAI and built on the ForgeUI Micro Arcade framework. The GC9A01 foundation originated from [UsefulElectronics/esp32s3-gc9a01-lvgl](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl). Original Useful Electronics / Ward Almasarani notices are retained. ESP-IDF, LVGL, and the managed GC9A01 component retain their respective licences and notices.
+ForgeUI MicroAsteroids is developed by RTechAI and built on the ForgeUI Micro Arcade framework. The GC9A01 foundation originated from [UsefulElectronics/esp32s3-gc9a01-lvgl](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl). Original Useful Electronics / Ward Almasarani notices are retained. ESP-IDF, LVGL, and the managed GC9A01 component retain their respective licences and notices.
